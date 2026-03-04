@@ -1,0 +1,7 @@
+# Requirements for encrypted-traffic-threat-detector
+numpy
+pandas
+scikit-learn
+flask
+matplotlib
+seaborn

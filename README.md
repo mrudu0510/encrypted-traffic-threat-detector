@@ -1,2 +1,11 @@
-# encrypted-traffic-threat-detector
-Detect security threats in encrypted traffic using ML and Wireshark integration without compromising user privacy
+# Encrypted Traffic Threat Detector
+
+This project detects potential threats in encrypted traffic.
+
+## Installation
+
+`pip install -r requirements.txt`
+
+## Usage
+
+Run the app using `python dashboard/app.py`
