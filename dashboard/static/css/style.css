@@ -1,0 +1,183 @@
+/* ============================================================
+   Encrypted Traffic Threat Detector – custom stylesheet
+   ============================================================ */
+
+/* ---------- Layout ---------- */
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f4f6f9;
+  color: #212529;
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  width: 240px;
+  min-height: 100vh;
+  background: #1a1f36;
+  color: #c8cfe0;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  transition: width .25s ease;
+  z-index: 100;
+}
+
+.sidebar-brand {
+  color: #ffffff !important;
+}
+
+.sidebar .nav-link {
+  color: #c8cfe0;
+  border-radius: 6px;
+  padding: .5rem .75rem;
+  transition: background .15s, color .15s;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  background: rgba(255, 255, 255, .12);
+  color: #ffffff;
+}
+
+.sidebar-footer {
+  font-size: .75rem;
+  color: #6c7a9c;
+}
+
+/* Collapsed sidebar */
+body.sidebar-collapsed .sidebar {
+  width: 64px;
+  overflow: hidden;
+}
+
+body.sidebar-collapsed .sidebar .nav-link span,
+body.sidebar-collapsed .sidebar-brand span,
+body.sidebar-collapsed .sidebar-footer {
+  display: none;
+}
+
+body.sidebar-collapsed #main-content {
+  margin-left: 0;
+}
+
+/* ---------- Main content ---------- */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* ---------- Top Navbar ---------- */
+.top-navbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e8ecf0;
+  min-height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+}
+
+/* ---------- Cards ---------- */
+.card {
+  border-radius: 10px;
+}
+
+.metric-card .card-body {
+  padding: 1.25rem;
+}
+
+.metric-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ---------- Tables ---------- */
+.table th {
+  font-size: .8rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #6c757d;
+  border-top: none;
+}
+
+/* ---------- Dropzone ---------- */
+.dropzone {
+  border: 2px dashed #ced4da !important;
+  border-radius: 10px;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: #0d6efd !important;
+  background: #eef3ff;
+}
+
+/* ---------- Badges ---------- */
+.badge {
+  font-weight: 500;
+  letter-spacing: .02em;
+}
+
+/* ---------- Scrollbar (WebKit) ---------- */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c8cfe0;
+  border-radius: 3px;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -240px;
+    transition: left .25s ease;
+    z-index: 200;
+  }
+
+  body.sidebar-open .sidebar {
+    left: 0;
+  }
+
+  body.sidebar-open::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 150;
+  }
+}
+
+/* ---------- Print ---------- */
+@media print {
+  .sidebar,
+  .top-navbar,
+  .btn,
+  footer {
+    display: none !important;
+  }
+
+  .main-content {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}

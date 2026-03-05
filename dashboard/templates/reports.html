@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Reports — ETTD{% endblock %}
+{% block page_title %}Reports{% endblock %}
+
+{% block content %}
+<!-- Summary -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-body py-3">
+        <div class="fs-2 fw-bold">{{ total_threats }}</div>
+        <div class="small text-muted">Total Threats</div>
+      </div>
+    </div>
+  </div>
+  {% set colors = ['success', 'warning', 'danger', 'dark'] %}
+  {% set levels = ['low', 'medium', 'high', 'critical'] %}
+  {% for level in levels %}
+  <div class="col-md-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-body py-3">
+        <div class="fs-2 fw-bold text-{{ colors[loop.index0] }}">{{ severity_counts[level] }}</div>
+        <div class="small text-muted">{{ level | capitalize }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div class="row g-4">
+  <!-- Threat type breakdown -->
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent fw-semibold">
+        <i class="bi bi-bar-chart me-2 text-primary"></i>Threats by Type
+      </div>
+      <div class="card-body">
+        <canvas id="typeChart" style="max-height:300px;"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload history -->
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-clock-history me-2 text-primary"></i>Analysis History</span>
+        <a href="{{ url_for('upload') }}" class="btn btn-sm btn-primary">
+          <i class="bi bi-cloud-upload me-1"></i>New Upload
+        </a>
+      </div>
+      <div class="card-body p-0">
+        {% if uploads %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>File</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Threats</th>
+                <th>Summary</th>
+                <th>Uploaded</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in uploads %}
+              <tr>
+                <td class="small">{{ f.filename }}</td>
+                <td><span class="badge bg-secondary">{{ f.file_type | upper }}</span></td>
+                <td><span class="badge bg-{{ status_badge(f.status) }}">{{ f.status | capitalize }}</span></td>
+                <td>
+                  {% if f.threat_count > 0 %}
+                  <span class="text-danger fw-semibold">{{ f.threat_count }}</span>
+                  {% else %}
+                  <span class="text-muted">0</span>
+                  {% endif %}
+                </td>
+                <td class="small text-muted">{{ f.analysis_summary or '—' }}</td>
+                <td class="small text-muted">{{ f.upload_time.strftime('%Y-%m-%d %H:%M') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-inbox display-4 d-block mb-3"></i>
+          No uploads yet. <a href="{{ url_for('upload') }}">Upload a file</a> to get started.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Print / export button -->
+<div class="mt-4 text-end">
+  <button class="btn btn-outline-secondary" onclick="window.print()">
+    <i class="bi bi-printer me-2"></i>Print Report
+  </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const typeCounts = {{ threat_type_counts | tojson }};
+  const labels = Object.keys(typeCounts);
+  const values = Object.values(typeCounts);
+
+  const ctx = document.getElementById('typeChart');
+  if (ctx && labels.length > 0) {
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Count',
+          data: values,
+          backgroundColor: 'rgba(13,110,253,.7)',
+          borderColor: '#0d6efd',
+          borderWidth: 1,
+        }]
+      },
+      options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } },
+      }
+    });
+  } else if (ctx) {
+    ctx.closest('.card-body').innerHTML =
+      '<p class="text-center text-muted py-4">No threat data yet.</p>';
+  }
+})();
+</script>
+{% endblock %}
