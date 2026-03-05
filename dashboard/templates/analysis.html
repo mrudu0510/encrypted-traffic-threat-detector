@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Threat Analysis — ETTD{% endblock %}
+{% block page_title %}Threat Analysis{% endblock %}
+
+{% block content %}
+<!-- Summary cards -->
+<div class="row g-3 mb-4">
+  {% set colors = ['success', 'warning', 'danger', 'dark'] %}
+  {% set icons  = ['check-circle', 'dash-circle', 'x-circle', 'slash-circle'] %}
+  {% for level in severity_levels %}
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-body py-3">
+        <div class="fs-3 fw-bold text-{{ colors[loop.index0] }}">
+          {{ severity_counts[level] }}
+        </div>
+        <div class="small text-muted">{{ level | capitalize }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-sm-4">
+        <label class="form-label small">Severity</label>
+        <select name="severity" class="form-select form-select-sm">
+          <option value="">All severities</option>
+          {% for level in severity_levels %}
+          <option value="{{ level }}" {% if severity_filter == level %}selected{% endif %}>
+            {{ level | capitalize }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-4">
+        <label class="form-label small">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="">All statuses</option>
+          <option value="open"           {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+          <option value="resolved"       {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+          <option value="false_positive" {% if status_filter == 'false_positive' %}selected{% endif %}>False Positive</option>
+        </select>
+      </div>
+      <div class="col-sm-4">
+        <button type="submit" class="btn btn-primary btn-sm w-100">
+          <i class="bi bi-funnel me-1"></i>Filter
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Threats table -->
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">
+      <i class="bi bi-table me-2 text-primary"></i>
+      Threat Records
+      <span class="badge bg-secondary ms-2">{{ threats.total }}</span>
+    </span>
+    <a href="{{ url_for('upload') }}" class="btn btn-sm btn-primary">
+      <i class="bi bi-cloud-upload me-1"></i>Upload New
+    </a>
+  </div>
+  <div class="card-body p-0">
+    {% if threats.items %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>#</th>
+            <th>Type</th>
+            <th>Severity</th>
+            <th>Source IP</th>
+            <th>Dest IP</th>
+            <th>Protocol</th>
+            <th>Confidence</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for threat in threats.items %}
+          <tr>
+            <td class="text-muted small">{{ threat.id }}</td>
+            <td>{{ threat.threat_type }}</td>
+            <td>
+              <span class="badge bg-{{ severity_badge(threat.severity) }}">
+                {{ threat.severity | capitalize }}
+              </span>
+            </td>
+            <td><code class="small">{{ threat.source_ip or '—' }}</code></td>
+            <td><code class="small">{{ threat.destination_ip or '—' }}</code></td>
+            <td class="small">{{ threat.protocol or '—' }}</td>
+            <td>
+              {% if threat.confidence %}
+              <div class="d-flex align-items-center gap-1">
+                <div class="progress flex-grow-1" style="height:6px;min-width:60px">
+                  <div
+                    class="progress-bar bg-{{ severity_badge(threat.severity) }}"
+                    style="width:{{ (threat.confidence * 100) | int }}%"
+                  ></div>
+                </div>
+                <small>{{ (threat.confidence * 100) | int }}%</small>
+              </div>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              <span class="badge bg-{{ status_badge(threat.status) }}">
+                {{ threat.status | replace('_', ' ') | capitalize }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ threat.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>
+              {% if threat.status == 'open' %}
+              <form method="POST" action="{{ url_for('resolve_threat', threat_id=threat.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-success" title="Mark resolved">
+                  <i class="bi bi-check-lg"></i>
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('false_positive', threat_id=threat.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-secondary" title="Mark false positive">
+                  <i class="bi bi-slash-circle"></i>
+                </button>
+              </form>
+              {% else %}
+              <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if threats.pages > 1 %}
+    <div class="d-flex justify-content-center py-3">
+      <nav>
+        <ul class="pagination pagination-sm mb-0">
+          {% if threats.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ threats.prev_num }}&severity={{ severity_filter }}&status={{ status_filter }}">
+              &laquo; Prev
+            </a>
+          </li>
+          {% endif %}
+          {% for p in threats.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+            {% if p %}
+            <li class="page-item {% if p == threats.page %}active{% endif %}">
+              <a class="page-link" href="?page={{ p }}&severity={{ severity_filter }}&status={{ status_filter }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+          {% endfor %}
+          {% if threats.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ threats.next_num }}&severity={{ severity_filter }}&status={{ status_filter }}">
+              Next &raquo;
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center text-muted py-5">
+      <i class="bi bi-shield-check display-4 d-block mb-3"></i>
+      No threat records found.
+      {% if severity_filter or status_filter %}
+      <br><a href="{{ url_for('analysis') }}" class="btn btn-sm btn-outline-secondary mt-2">Clear filters</a>
+      {% else %}
+      <br><a href="{{ url_for('upload') }}" class="btn btn-primary mt-3">Upload Traffic File</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Traffic — ETTD{% endblock %}
+{% block page_title %}Upload Traffic Data{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <!-- Upload form -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-transparent fw-semibold">
+        <i class="bi bi-cloud-upload me-2 text-primary"></i>Upload Network Traffic File
+      </div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data" id="uploadForm" novalidate>
+          <div class="mb-4">
+            <label for="fileInput" class="form-label fw-medium">Select File</label>
+            <div id="dropzone" class="dropzone border rounded p-4 text-center">
+              <i class="bi bi-cloud-arrow-up display-4 text-muted d-block mb-2"></i>
+              <p class="mb-1">Drag &amp; drop a file here, or click to browse</p>
+              <small class="text-muted">Supported formats: <strong>CSV</strong>, <strong>PCAP</strong>, <strong>PCAPNG</strong> &mdash; Max 64 MB</small>
+              <input
+                type="file"
+                id="fileInput"
+                name="file"
+                class="form-control mt-3"
+                accept=".csv,.pcap,.pcapng"
+                required
+              />
+            </div>
+            <div id="fileInfo" class="mt-2 text-muted small d-none"></div>
+          </div>
+
+          <div id="progressWrapper" class="mb-3 d-none">
+            <div class="progress">
+              <div
+                id="uploadProgress"
+                class="progress-bar progress-bar-striped progress-bar-animated"
+                role="progressbar"
+                style="width: 0%"
+              ></div>
+            </div>
+            <small class="text-muted mt-1 d-block">Uploading and analyzing…</small>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+            <i class="bi bi-search me-2"></i>Upload &amp; Analyze
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Info card -->
+    <div class="card border-0 shadow-sm mt-4">
+      <div class="card-header bg-transparent fw-semibold">
+        <i class="bi bi-info-circle me-2 text-info"></i>How It Works
+      </div>
+      <div class="card-body">
+        <ol class="mb-0 small text-muted">
+          <li class="mb-2">Upload a CSV or PCAP file containing captured network traffic.</li>
+          <li class="mb-2">The system inspects traffic metadata and TLS features.</li>
+          <li class="mb-2">Machine-learning models classify each flow as benign or malicious.</li>
+          <li>Detected threats are stored and displayed on the Analysis page.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent uploads -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="bi bi-clock-history me-2 text-primary"></i>Recent Uploads</span>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_uploads %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>File</th>
+                <th>Size</th>
+                <th>Status</th>
+                <th>Threats</th>
+                <th>Uploaded</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in recent_uploads %}
+              <tr>
+                <td>
+                  <i class="bi bi-file-earmark-{{ 'text' if f.file_type == 'csv' else 'binary' }} me-1 text-muted"></i>
+                  <small>{{ f.filename }}</small>
+                </td>
+                <td class="small text-muted">{{ (f.file_size / 1024) | round(1) }} KB</td>
+                <td>
+                  <span class="badge bg-{{ status_badge(f.status) }}">{{ f.status | capitalize }}</span>
+                </td>
+                <td>{{ f.threat_count }}</td>
+                <td class="small text-muted">{{ f.upload_time.strftime('%d/%m %H:%M') }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center text-muted py-5">
+          <i class="bi bi-inbox display-4 d-block mb-3"></i>
+          No files uploaded yet.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const fileInfo = document.getElementById('fileInfo');
+  const form = document.getElementById('uploadForm');
+  const progressWrapper = document.getElementById('progressWrapper');
+  const progressBar = document.getElementById('uploadProgress');
+  const submitBtn = document.getElementById('submitBtn');
+
+  if (fileInput) {
+    fileInput.addEventListener('change', function () {
+      if (this.files.length > 0) {
+        const f = this.files[0];
+        fileInfo.textContent = `Selected: ${f.name} (${(f.size / 1024).toFixed(1)} KB)`;
+        fileInfo.classList.remove('d-none');
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', function () {
+      progressWrapper.classList.remove('d-none');
+      submitBtn.disabled = true;
+      let w = 0;
+      const iv = setInterval(function () {
+        w = Math.min(w + 5, 90);
+        progressBar.style.width = w + '%';
+        if (w >= 90) clearInterval(iv);
+      }, 200);
+    });
+  }
+})();
+</script>
+{% endblock %}
